@@ -299,6 +299,12 @@ config LEDS_PCA963X
 	  LED driver chip accessed via the I2C bus. Supported
 	  devices include PCA9633 and PCA9634
 
+config LEDS_MSM_GPIO_FLASH
+	bool "LED support for MSM GPIO FLASH"
+	help
+	  This driver supports the leds functionality of GPIO Flash LED. It
+	  includes flash mode and torch mode.
+
 config LEDS_PCA9956B
 	tristate "LED Support for PCA9956B I2C chips"
 	depends on LEDS_CLASS
@@ -361,6 +367,14 @@ config LEDS_REGULATOR
 	depends on REGULATOR
 	help
 	  This option enables support for regulator driven LEDs.
+
+config LEDS_KTD2026
+        tristate "LED driver for KTD2026 RGB LED"
+        depends on LEDS_CLASS
+        depends on REGULATOR
+        help
+          This option enables support for KTD2026 RGB LED driver chips
+          accessed via the I2C bus.
 
 config LEDS_BD2802
 	tristate "LED driver for BD2802 RGB LED"
