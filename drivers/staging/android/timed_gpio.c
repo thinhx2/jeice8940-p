@@ -21,6 +21,13 @@
 #include <linux/err.h>
 #include <linux/gpio.h>
 
+#ifdef CONFIG_TOWA_PRODUCT
+#ifdef CONFIG_OF
+#include <linux/of.h>
+#include <linux/of_platform.h>
+#include <linux/of_gpio.h>
+#endif
+#endif
 #include "timed_output.h"
 #include "timed_gpio.h"
 
@@ -82,12 +89,102 @@ static void gpio_enable(struct timed_output_dev *dev, int value)
 	spin_unlock_irqrestore(&data->lock, flags);
 }
 
+#ifdef CONFIG_TOWA_PRODUCT
+#ifdef CONFIG_OF
+static struct timed_gpio_platform_data *
+timed_gpio_get_devtree_pdata(struct device *dev)
+{
+	struct device_node *node = NULL;
+	struct device_node *pp = NULL;
+	struct timed_gpio_platform_data *pdata = NULL;
+	struct timed_gpio *new_gpio =NULL;
+	int error = EPROBE_DEFER;
+	int gpio_count = 0;
+	int i = 0;
+
+	node = dev->of_node;
+	if (!node){
+		dev_err(dev,"Failed to get node\n");
+		return ERR_PTR(-ENODEV);
+	}
+
+	gpio_count = of_get_child_count(node);
+	if (gpio_count == 0){
+		dev_err(dev,"Failed to get gpio_count\n");
+		return ERR_PTR(-ENODEV);
+	}
+
+	pdata = devm_kzalloc(dev,
+			sizeof(*pdata) + gpio_count * sizeof(*new_gpio),
+			GFP_KERNEL);
+	if (!pdata){
+		dev_err(dev,"Failed to get pdata\n");
+		return ERR_PTR(-ENOMEM);
+	}
+	pdata->gpios = (struct timed_gpio *)(pdata + 1);
+	pdata->num_gpios = gpio_count;
+
+	for_each_child_of_node(node, pp) {
+		int gpio;
+		enum of_gpio_flags flags;
+
+		if (!of_find_property(pp, "gpios", NULL)) {
+			pdata->num_gpios--;
+			dev_warn(dev, "Can't find gpios\n");
+			continue;
+		}
+
+		gpio = of_get_gpio_flags(pp, 0, &flags);
+		if (gpio < 0) {
+			error = gpio;
+			if (error != -EPROBE_DEFER)
+				dev_err(dev,"Failed to get gpio flags, error: %d\n",
+					error);
+			return ERR_PTR(error);
+		}
+
+		new_gpio = &pdata->gpios[i++];
+		new_gpio->gpio = gpio;
+		new_gpio->active_low = flags & OF_GPIO_ACTIVE_LOW;
+
+		if (of_property_read_u32(pp, "max_timeout", &new_gpio->max_timeout)) {
+			dev_err(dev, "Time_gpio without max_timeout: 0x%x\n",
+				new_gpio->gpio);
+			return ERR_PTR(-EINVAL);
+		}
+
+		new_gpio->name = of_get_property(pp, "label", NULL);
+	}
+
+	if (pdata->num_gpios == 0){
+		dev_err(dev,"Failed to get num_gpios 0\n");
+		return ERR_PTR(-EINVAL);
+	}
+	return pdata;
+}
+static const struct of_device_id timed_gpio_of_match[] = {
+	{ .compatible = "timed-gpio", },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, timed_gpio_of_match);
+#endif
+#endif
 static int timed_gpio_probe(struct platform_device *pdev)
 {
+#ifdef CONFIG_TOWA_PRODUCT
+#ifdef CONFIG_OF
+	struct device *dev = &pdev->dev;
+#endif
+#endif
 	struct timed_gpio_platform_data *pdata = pdev->dev.platform_data;
 	struct timed_gpio *cur_gpio;
 	struct timed_gpio_data *gpio_data, *gpio_dat;
 	int i, ret;
+#ifdef CONFIG_TOWA_PRODUCT
+#ifdef CONFIG_OF
+	pdata = timed_gpio_get_devtree_pdata(dev);
+#endif
+#endif
 
 	if (!pdata)
 		return -EBUSY;
@@ -158,6 +255,11 @@ static struct platform_driver timed_gpio_driver = {
 	.driver		= {
 		.name		= TIMED_GPIO_NAME,
 		.owner		= THIS_MODULE,
+#ifdef CONFIG_TOWA_PRODUCT
+#ifdef CONFIG_OF
+		.of_match_table = of_match_ptr(timed_gpio_of_match),
+#endif
+#endif
 	},
 };
 

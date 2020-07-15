@@ -43,7 +43,71 @@ static struct mdss_dsi_data *mdss_dsi_res;
 #define DSI_DISABLE_PC_LATENCY 100
 #define DSI_ENABLE_PC_LATENCY PM_QOS_DEFAULT_VALUE
 
+#ifdef CONFIG_TOWA_PRODUCT
+int hx_smwp_en_flag = 0;
+#endif
+#ifdef CONFIG_TOUCHSCREEN_FTS
+extern int focaltech_gesture_enable;
+#endif
+#ifdef CONFIG_TOUCHSCREEN_ILI2120
+extern int ilitek_gesture_enable;
+#endif
+
 static struct pm_qos_request mdss_dsi_pm_qos_request;
+#ifdef CONFIG_TOWA_PRODUCT
+static void hw_panel_power_en(struct mdss_panel_data* pdata, int enable)
+{
+	struct mdss_dsi_ctrl_pdata* ctrl_pdata = NULL;
+	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata, panel_data);
+	pr_info("%s:%d enable:%s\n",__func__,__LINE__,enable?"on":"off");
+
+	if (enable){
+		if (gpio_is_valid(ctrl_pdata->tp_reset_gpio)) {
+			gpio_direction_output((ctrl_pdata->tp_reset_gpio), enable);
+			pr_err("%s,%d set tp_rst_gpio = %d \n", __func__, __LINE__, enable);
+		}
+		mdelay(5);
+
+		if (gpio_is_valid(ctrl_pdata->disp_vsp_gpio)){
+			gpio_direction_output((ctrl_pdata->disp_vsp_gpio), enable);
+			pr_err("%s,%d set disp_vsp_gpio = %d \n", __func__, __LINE__, enable);
+		}
+		mdelay(5);
+		if (gpio_is_valid(ctrl_pdata->disp_vsn_gpio)){
+			gpio_direction_output((ctrl_pdata->disp_vsn_gpio), enable);
+			pr_err("%s,%d set disp_vsn_gpio = %d \n", __func__, __LINE__, enable);
+		}
+		//mdelay(12);
+		/*
+		mdelay(5);
+		if (gpio_is_valid(ctrl_pdata->disp_bl_en_gpio)){
+			gpio_direction_output((ctrl_pdata->disp_bl_en_gpio), enable);
+			pr_err("%s,%d set disp_bl_en_gpio = %d \n", __func__, __LINE__, enable);
+		}
+		mdelay(5);*/
+
+	}
+	else {
+		if (gpio_is_valid(ctrl_pdata->disp_bl_en_gpio)){
+			gpio_direction_output((ctrl_pdata->disp_bl_en_gpio), enable);
+			pr_info("%s,%d set disp_bl_en_gpio = %d \n", __func__, __LINE__, enable);
+		}
+		mdelay(5);
+		/*if (!hx_smwp_en_flag && !pdata->panel_info.panel_dead)*/if (!pdata->panel_info.panel_dead && hx_smwp_en_flag == 0) {
+			if (gpio_is_valid(ctrl_pdata->disp_vsn_gpio)) {
+				gpio_direction_output((ctrl_pdata->disp_vsn_gpio), enable);
+				pr_info("%s,%d set disp_vsn_gpio = %d \n", __func__, __LINE__, enable);
+			}
+			mdelay(5);
+			if (gpio_is_valid(ctrl_pdata->disp_vsp_gpio)) {
+				gpio_direction_output((ctrl_pdata->disp_vsp_gpio), enable);
+				pr_info("%s,%d set disp_vsp_gpio = %d \n", __func__, __LINE__, enable);
+			}
+			mdelay(5);
+		}
+	}
+}
+#endif
 
 static void mdss_dsi_pm_qos_add_request(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
 {
@@ -295,9 +359,37 @@ static int mdss_dsi_panel_power_off(struct mdss_panel_data *pdata)
 	if (mdss_dsi_pinctrl_set_state(ctrl_pdata, false))
 		pr_debug("reset disable: pinctrl not enabled\n");
 
-	ret = msm_dss_enable_vreg(
-		ctrl_pdata->panel_power_data.vreg_config,
-		ctrl_pdata->panel_power_data.num_vreg, 0);
+#ifdef CONFIG_TOWA_PRODUCT
+	hw_panel_power_en(pdata, 0);
+#endif
+
+#ifdef CONFIG_TOUCHSCREEN_FTS
+	if (focaltech_gesture_enable == 1) {
+		ret = msm_dss_enable_vreg(
+			ctrl_pdata->panel_power_data.vreg_config,
+			ctrl_pdata->panel_power_data.num_vreg, 1);
+	} else 
+#endif
+#ifdef CONFIG_TOUCHSCREEN_ILI2120
+	if (ilitek_gesture_enable == 1) {
+		ret = msm_dss_enable_vreg(
+			ctrl_pdata->panel_power_data.vreg_config,
+			ctrl_pdata->panel_power_data.num_vreg, 1);
+	} else 
+#endif
+#ifdef CONFIG_TOWA_PRODUCT
+	if (hx_smwp_en_flag == 1) {
+		ret = msm_dss_enable_vreg(
+			ctrl_pdata->panel_power_data.vreg_config,
+			ctrl_pdata->panel_power_data.num_vreg, 1);
+	} else 
+#endif
+		{
+		ret = msm_dss_enable_vreg(
+			ctrl_pdata->panel_power_data.vreg_config,
+			ctrl_pdata->panel_power_data.num_vreg, 0);
+	}
+
 	if (ret)
 		pr_err("%s: failed to disable vregs for %s\n",
 			__func__, __mdss_dsi_pm_name(DSI_PANEL_PM));
@@ -327,6 +419,9 @@ static int mdss_dsi_panel_power_on(struct mdss_panel_data *pdata)
 		return ret;
 	}
 
+#ifdef CONFIG_TOWA_PRODUCT
+	hw_panel_power_en(pdata, 1);
+#endif
 	/*
 	 * If continuous splash screen feature is enabled, then we need to
 	 * request all the GPIOs that have already been configured in the
@@ -424,6 +519,9 @@ int mdss_dsi_panel_power_ctrl(struct mdss_panel_data *pdata,
 		pr_debug("%s: no change needed\n", __func__);
 		return 0;
 	}
+
+	if (power_state == 1)
+		gpio_direction_output(110, 1);
 
 	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
 				panel_data);
@@ -1489,12 +1587,21 @@ int mdss_dsi_on(struct mdss_panel_data *pdata)
 	if (mipi->lp11_init) {
 		if (mdss_dsi_pinctrl_set_state(ctrl_pdata, true))
 			pr_debug("reset enable: pinctrl not enabled\n");
+#ifdef CONFIG_TOWA_PRODUCT			
+		if (mipi->init_delay)
+			usleep_range(mipi->init_delay, mipi->init_delay);
+#endif
 		mdss_dsi_panel_reset(pdata, 1);
 	}
+#ifdef CONFIG_TOWA_PRODUCT
+    else {
+#endif
 
 	if (mipi->init_delay)
 		usleep_range(mipi->init_delay, mipi->init_delay);
-
+#ifdef CONFIG_TOWA_PRODUCT
+    }
+#endif
 	if (mipi->force_clk_lane_hs) {
 		u32 tmp;
 
@@ -4118,6 +4225,12 @@ static int mdss_dsi_parse_gpio_params(struct platform_device *ctrl_pdev,
 	if (!gpio_is_valid(ctrl_pdata->rst_gpio))
 		pr_err("%s:%d, reset gpio not specified\n",
 						__func__, __LINE__);
+#ifdef CONFIG_TOWA_PRODUCT
+	ctrl_pdata->tp_reset_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
+		"qcom,platform-tp-reset-gpio", 0);
+	if (!gpio_is_valid(ctrl_pdata->tp_reset_gpio))
+		pr_info("%s: tp_rst_gpio not specified\n", __func__);
+#endif
 
 	if (pinfo->mode_gpio_state != MODE_GPIO_NOT_VALID) {
 
@@ -4136,7 +4249,22 @@ static int mdss_dsi_parse_gpio_params(struct platform_device *ctrl_pdev,
 	if (!gpio_is_valid(ctrl_pdata->intf_mux_gpio))
 		pr_debug("%s:%d, intf mux gpio not specified\n",
 						__func__, __LINE__);
+#ifdef CONFIG_TOWA_PRODUCT
+	ctrl_pdata->disp_vsp_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
+			 "qcom,platform-vsp-gpio", 0);
+	if (!gpio_is_valid(ctrl_pdata->disp_vsp_gpio))
+		pr_info("%s: disp_vsp_gpio not specified\n", __func__);
 
+	ctrl_pdata->disp_vsn_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
+			 "qcom,platform-vsn-gpio", 0);
+	if (!gpio_is_valid(ctrl_pdata->disp_vsn_gpio))
+		pr_info("%s: disp_vsn_gpio not specified\n", __func__);
+
+	ctrl_pdata->disp_bl_en_gpio = of_get_named_gpio(ctrl_pdev->dev.of_node,
+			 "qcom,platform-bl-en-gpio", 0);
+	if (!gpio_is_valid(ctrl_pdata->disp_bl_en_gpio))
+		pr_info("%s: disp_bl_en_gpio not specified\n", __func__);
+#endif
 	return 0;
 }
 

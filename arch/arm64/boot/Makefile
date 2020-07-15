@@ -23,7 +23,13 @@ ifneq ($(DTB_NAMES),)
 DTB_LIST := $(addsuffix .dtb,$(DTB_NAMES))
 DTB_OBJS := $(addprefix $(obj)/dts/,$(DTB_LIST))
 else
+# only include the expect dtb, to save bootup time
+ifeq ($(CONFIG_TOWA_PRODUCT),y)
+DTB_LIST := towa.dtb
+DTB_OBJS := $(addprefix $(obj)/dts/qcom/,$(DTB_LIST))
+else
 DTB_OBJS := $(shell find $(obj)/dts/ -name \*.dtb)
+endif
 endif
 
 $(obj)/Image: vmlinux FORCE

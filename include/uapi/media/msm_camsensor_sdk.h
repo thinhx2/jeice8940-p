@@ -182,6 +182,8 @@ enum msm_flash_driver_type {
 	FLASH_DRIVER_PMIC,
 	FLASH_DRIVER_I2C,
 	FLASH_DRIVER_GPIO,
+	FLASH_DRIVER_AW3640,
+	FLASH_DRIVER_SGM3785,
 	FLASH_DRIVER_DEFAULT
 };
 
@@ -191,6 +193,9 @@ enum msm_flash_cfg_type_t {
 	CFG_FLASH_OFF,
 	CFG_FLASH_LOW,
 	CFG_FLASH_HIGH,
+	CFG_TORCH_LOW,
+	CFG_TORCH_MID,
+	CFG_TORCH_HIGH,
 };
 
 enum msm_ir_led_cfg_type_t {

@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+&soc {
+        sunwave {
+		status = "ok";
+		compatible = "sunwave,fingerprint";
+		interrupt-parent = <&tlmm>;
+		interrupts = <48 0x0>;
+		sunwave,gpio_reset = <&tlmm 66 0x0>;
+		sunwave,gpio_irq = <&tlmm 48 0x0>;
+		sunwave,gpio_pwr = <&tlmm 68 0x0>;
+		sunwave,id_gpio = <&tlmm 50 0>;
+		vdd-supply = <&pm8937_l10>;
+	};
+
+	cdfinger_fingerprint {
+		compatible = "cdfinger,fps998e";
+		interrupt-parent = <&tlmm>;
+		interrupts = <48 0x0>;
+		/*vdd_ana-supply  = <&pm8937_l6>;*/
+		cdfinger,reset_gpio = <&tlmm 66 0>;
+		cdfinger,irq_gpio = <&tlmm 48 0>;
+		cdfinger,gpio_pwr = <&tlmm 68 0>;
+		cdfinger,id_gpio = <&tlmm 50 0>;
+		pinctrl-names = "cdfinger_id_pin";
+		pinctrl-0 = <&msm_gpio_50>;
+		vdd-supply = <&pm8937_l10>;
+	};
+
+	tlmm: pinctrl@1000000 {
+		msm_gpio_50: msm_gpio_50 {
+			mux {
+				pins = "gpio50";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio50";
+				drive-strength = <2>;
+				bias-pull-down;
+			};
+		};
+	};
+};

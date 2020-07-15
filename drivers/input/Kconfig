@@ -218,6 +218,9 @@ source "drivers/input/serio/Kconfig"
 
 source "drivers/input/gameport/Kconfig"
 
+source "drivers/input/cdfingerfp/Kconfig"
+
+source "drivers/input/sunwave/Kconfig"
 endmenu
 
 endmenu

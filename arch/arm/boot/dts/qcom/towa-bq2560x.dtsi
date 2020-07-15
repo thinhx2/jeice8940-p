@@ -1,0 +1,227 @@
+/*
+ * BQ2560x battery charging dtsi
+ *
+ * Copyright (C) 2013 Texas Instruments
+ *
+ * This package is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+
+ * THIS PACKAGE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
+ * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+ */
+
+&soc {
+	tlmm: pinctrl@1000000 {
+		usbid_default: usbid_default {
+			mux {
+				pins = "gpio12";
+				function = "gpio";
+			};
+
+			config {
+				pins = "gpio12";
+				bias-pull-up;
+				drive-strength = <8>; /* 8 MA */
+			};
+		};
+
+		bq_int_default: bq_int_default {
+			mux {
+				pins = "gpio17";
+				function ="gpio";
+			};
+			config {
+				pins = "gpio17";
+				drive-strength = <2>; /* 2 MA */
+				bias-pull-up; /* PULL UP*/
+			};
+		};
+
+		smb_int_default: smb_int_default{
+			mux {
+				pins = "gpio1";
+				function ="gpio";
+			};
+			config {
+				pins = "gpio1";
+				drive-strength = <2>; /* 2 MA */
+				bias-pull-up; /* PULL UP*/
+			};
+		};
+
+		ovp_int_default: ovp_int_default{
+			mux {
+				pins = "gpio131";
+				function ="gpio";
+			};
+			config {
+				pins = "gpio131";
+				drive-strength = <2>; /* 2 MA */
+				bias-disable; /* PULL UP*/
+			};
+		};
+	};
+};
+
+&i2c_2{
+	bq27426@55 {
+		compatible = "ti,bq27426";
+		reg = <0x55>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <17 2>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&bq_int_default>;
+
+		vdd-supply = <&pm8937_l16>;
+		/* Added by lichuangchuang to add vio for i2c pull up (ql1668) QL1668-447 2017-09-26 begin */
+		vio-supply = <&pm8937_l5>;
+		qcom,batt_id-vadc = <&pm8937_vadc>;
+		/* Added by lichuangchuang to add vio for i2c pull up (ql1668) QL1668-447 2017-09-26 end */
+		ti,batt-id-vref-uv = <1800000>;
+		ti,batt-id-rpullup-kohm = <68>;
+		ti,batt-id = <&tlmm 0 0>;
+	};
+	bq2560x_otg_supply: bq2560x@6B {
+		compatible = "ti,bq25601-charger";
+		reg = <0x6B>;
+		interrupt-parent = <&tlmm>;
+		interrupts = <1 2>;
+		pinctrl-names = "default", "ovp_default";
+		pinctrl-0 = <&smb_int_default>;
+		qcom,ovp-gpio = <&tlmm 131 0>;
+		pinctrl-1 = <&ovp_int_default>;
+
+		regulator-name = "bq2560x_otg_vreg";
+
+
+		ti,bq2560x,chip-enable-gpio = <2>;
+		ti,bq2560x,chip-enable-ovp-gpio = <131>;
+		ti,bq2560x,usb-vlim = <4400>;
+		ti,bq2560x,usb-ilim = <500>;
+		ti,bq2560x,usb-vreg = <4400>;
+		ti,bq2560x,usb-ichg = <500>;
+
+		ti,bq2560x,ta-vlim = <4200>;
+		ti,bq2560x,ta-ilim = <1400>;
+		ti,bq2560x,ta-vreg = <4400>;
+		ti,bq2560x,ta-ichg = <1260>;
+
+		ti,bq2560x,precharge-current = <256>;
+		ti,bq2560x,termination-current = <240>;
+		ti,bq2560x,boost-voltage = <5150>;
+		ti,bq2560x,boost-current = <1200>;
+		ti,bq2560x,enable_term;
+		ti,bq2560x,stat-pin-ctrl = <3>;
+		ti,bq2560x,vac-ovp-threshold = <6500>;
+
+		ti,bq2560x,jeita-hot-degc = <550>;
+		ti,bq2560x,jeita-warm-degc = <450>;
+		ti,bq2560x,jeita-cool-degc = <150>;
+		ti,bq2560x,jeita-cold-degc = <0>;
+
+		ti,bq2560x,jeita-hot-hysteresis = <49>;
+		ti,bq2560x,jeita-cold-hysteresis = <19>;
+
+		ti,bq2560x,jeita-cool-ma = <800>;
+		ti,bq2560x,jeita-cool-mv = <4400>;
+		ti,bq2560x,jeita-warm-ma = <1200>;
+		ti,bq2560x,jeita-warm-mv = <4100>;
+
+		ti,bq2560x,software-jeita-supported;
+
+		qcom,thermal-mitigation = <1320 1080 840 540 240 0>;
+	};
+
+        /*xuhao add for aw2016a leds*/
+        aw2016@64 {/* add for breath led. */
+		compatible = "awinic,aw2016_led";
+		reg = <0x64>;
+
+		aw2016,red {
+			aw2016,name = "red";
+			aw2016,id = <0>;
+			aw2016,imax = <0>;
+			aw2016,led-current = <5>;
+			aw2016,max-brightness = <255>;
+			aw2016,rise-time-ms = <6>;
+			aw2016,hold-time-ms = <0>;
+			aw2016,fall-time-ms = <6>;
+			aw2016,off-time-ms = <4>;
+		};
+
+		aw2016,green {
+			aw2016,name = "green";
+			aw2016,id = <1>;
+			aw2016,imax = <0>;
+			aw2016,led-current = <5>;
+			aw2016,max-brightness = <255>;
+			aw2016,rise-time-ms = <6>;
+			aw2016,hold-time-ms = <0>;
+			aw2016,fall-time-ms = <6>;
+			aw2016,off-time-ms = <4>;
+		};
+
+		aw2016,blue {
+			aw2016,name = "blue";
+			aw2016,id = <2>;
+			aw2016,imax = <0>;
+			aw2016,led-current = <5>;
+			aw2016,max-brightness = <255>;
+			aw2016,rise-time-ms = <6>;
+			aw2016,hold-time-ms = <0>;
+			aw2016,fall-time-ms = <6>;
+			aw2016,off-time-ms = <4>;
+		};
+	};
+};
+
+&i2c_2 {
+	pericom-type-c@1d {
+		status="disabled";
+	};
+	adv7533@39 {
+		status="disabled";
+	};
+};
+
+&usb_otg{
+	vbus_otg-supply = <&bq2560x_otg_supply>;
+	qcom,hsusb-otg-phy-init-seq =
+		<0x39 0x81 0x37 0x82 0xffffffff>;
+	qcom,hsusb-otg-phy-init-seq-host =
+		<0x74 0x80 0x2b 0x81 0x3f 0x82 0x13 0x83 0xffffffff>;
+	qcom,usbid-gpio = <&tlmm 12 0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&usbid_default>;
+};
+/* Added by lichuangchuang to add vio for i2c pull up (ql1668) QL1668-447 2017-09-26 begin */
+/* Modified by lichuangchuang to add vio for i2c pull up (ql1668) QL1668-447 2017-09-26 begin */
+&pm8937_mpps {
+	mpp@a300 {
+		reg = <0xa300 0x100>;
+		qcom,pin-num = <4>;
+		qcom,mode = <4>; // A-input
+		qcom,src-sel = <0>; //MPP Constant
+		qcom,ain-route = <3>; // QPNP_PIN_AIN_AMUX_CH8 = 1 for MPP4
+		qcom,master-en = <1>; //Enable MPP
+	};
+};
+
+&pm8937_vadc {
+	chan@13 {
+		label = "mpp4_adc";
+		reg = <0x13>; // channel for MPP4
+		qcom,decimation = <0>;
+		qcom,pre-div-channel-scaling = <0>; //Use 1:1 scaling to keep input voltage with in Max voltage: 1.8V
+		qcom,calibration-type = "absolute";
+		qcom,scale-function = <0>;
+		qcom,hw-settle-time = <1>;
+		qcom,fast-avg-setup = <2>;
+		/delete-property/qcom,vadc-thermal-node;
+	};
+};
+/* Modified by lichuangchuang to add vio for i2c pull up (ql1668) QL1668-447 2017-09-26 end */
+/* Added by lichuangchuang to add vio for i2c pull up (ql1668) QL1668-447 2017-09-26 end */
+

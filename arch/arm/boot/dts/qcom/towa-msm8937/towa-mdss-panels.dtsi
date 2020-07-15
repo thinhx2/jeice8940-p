@@ -1,0 +1,26 @@
+/* Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "towa-panel-hx-nt36572a-720p-video.dtsi"
+#include "towa-panel-dj-ft8719-720p-video.dtsi"
+
+&mdss_dsi0 {
+	qcom,platform-vsn-gpio = <&tlmm 62 0>;
+	qcom,platform-vsp-gpio = <&tlmm 61 0>;
+	qcom,platform-reset-gpio = <&tlmm 60 0>;
+	//qcom,platform-bl-en-gpio = <&tlmm 25 0>;
+	/*Added by jingyuantao for tp gesture wakeup QL1668-634 2017-09-28 begin*/
+	qcom,platform-tp-reset-gpio = <&tlmm 64 0>;
+	/*Added by jingyuantao for tp gesture wakeup QL1668-634 2017-09-28 end*/
+};
+
+

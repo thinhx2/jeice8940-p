@@ -1,0 +1,4 @@
+config CDFINGER_FP
+	tristate "cdfinger fingerprint drvier support"
+	help
+	  Say Y here to enable cdfinger] fingerprint driver support!
