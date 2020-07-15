@@ -196,6 +196,7 @@ config SENSORS_HALL
 
 comment "Input Device Drivers"
 
+source "drivers/input/fingerprint/Kconfig"
 source "drivers/input/keyboard/Kconfig"
 
 source "drivers/input/mouse/Kconfig"

@@ -250,6 +250,10 @@
 #define SWIRE_DEFAULT_2ND_CMD_DLY_MS		20
 #define SWIRE_DEFAULT_IBB_PS_ENABLE_DLY_MS	200
 
+#ifdef CONFIG_JEICE_COMMON
+extern int tp_gesture_wakeup(void);
+#endif
+
 enum pmic_subtype {
 	PMI8994		= 10,
 	PMI8950		= 17,
@@ -1314,6 +1318,13 @@ static int qpnp_labibb_regulator_enable(struct qpnp_labibb *labibb)
 	int retries;
 	bool enabled = false;
 
+#ifdef CONFIG_JEICE_COMMON
+	if(tp_gesture_wakeup() == 1)
+     labibb->ttw_en = true;
+  else
+     labibb->ttw_en = false;
+#endif
+
 	if (labibb->ttw_en && !labibb->ibb_vreg.vreg_enabled &&
 		labibb->in_ttw_mode) {
 		rc = qpnp_labibb_regulator_ttw_mode_exit(labibb);
@@ -1405,6 +1416,13 @@ static int qpnp_labibb_regulator_disable(struct qpnp_labibb *labibb)
 	 * mode settings will be restored anyways and regulators will be
 	 * enabled as before.
 	 */
+#ifdef CONFIG_JEICE_COMMON
+	if(tp_gesture_wakeup() == 1)
+     labibb->ttw_en = true;
+  else
+     labibb->ttw_en = false;
+#endif
+
 	if (labibb->ttw_en && !labibb->in_ttw_mode) {
 		rc = qpnp_labibb_regulator_ttw_mode_enter(labibb);
 		if (rc) {

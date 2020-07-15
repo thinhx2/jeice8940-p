@@ -594,6 +594,12 @@ static int32_t msm_flash_low(
 	int32_t i = 0;
 
 	CDBG("Enter\n");
+
+#ifdef CONFIG_JEICE_COMMON
+	if (flash_ctrl->switch_trigger)
+		led_trigger_event(flash_ctrl->switch_trigger, 0);
+#endif
+
 	/* Turn off flash triggers */
 	for (i = 0; i < flash_ctrl->flash_num_sources; i++)
 		if (flash_ctrl->flash_trigger[i])
@@ -630,6 +636,11 @@ static int32_t msm_flash_high(
 	int32_t curr = 0;
 	int32_t max_current = 0;
 	int32_t i = 0;
+
+#ifdef CONFIG_JEICE_COMMON
+	if (flash_ctrl->switch_trigger)
+		led_trigger_event(flash_ctrl->switch_trigger, 0);
+#endif
 
 	/* Turn off torch triggers */
 	for (i = 0; i < flash_ctrl->torch_num_sources; i++)
@@ -988,6 +999,7 @@ static int32_t msm_flash_get_dt_data(struct device_node *of_node,
 	struct msm_flash_ctrl_t *fctrl)
 {
 	int32_t rc = 0;
+	int32_t flash_driver_type = -1;
 
 	CDBG("called\n");
 
@@ -1006,6 +1018,27 @@ static int32_t msm_flash_get_dt_data(struct device_node *of_node,
 	CDBG("subdev id %d\n", fctrl->subdev_id);
 
 	fctrl->flash_driver_type = FLASH_DRIVER_DEFAULT;
+
+	/* Read the flash_driver_type */
+	rc = of_property_read_u32(of_node, "qcom,flash-type", &flash_driver_type);
+	if (rc < 0) {
+		pr_err("failed rc %d\n", rc);
+	}
+	switch(flash_driver_type){
+		case 1:
+			fctrl->flash_driver_type = FLASH_DRIVER_PMIC;
+			break;
+		case 2:
+			fctrl->flash_driver_type = FLASH_DRIVER_GPIO;
+			break;
+		case 3:
+			fctrl->flash_driver_type = FLASH_DRIVER_GPIO;
+			break;
+		default:
+			fctrl->flash_driver_type = FLASH_DRIVER_DEFAULT;
+			break;
+	}
+	pr_info("flash_driver_type %d", fctrl->flash_driver_type);
 
 	/* Read the CCI master. Use M0 if not available in the node */
 	rc = of_property_read_u32(of_node, "qcom,cci-master",
@@ -1271,7 +1304,11 @@ static int32_t msm_flash_platform_probe(struct platform_device *pdev)
 #endif
 	flash_ctrl->msm_sd.sd.devnode->fops = &msm_flash_v4l2_subdev_fops;
 
+#ifdef CONFIG_JEICE_COMMON
+	if (flash_ctrl->flash_driver_type == FLASH_DRIVER_PMIC && 0 == flash_ctrl->pdev->id)
+#else
 	if (flash_ctrl->flash_driver_type == FLASH_DRIVER_PMIC)
+#endif
 		rc = msm_torch_create_classdev(pdev, flash_ctrl);
 
 	CDBG("probe success\n");

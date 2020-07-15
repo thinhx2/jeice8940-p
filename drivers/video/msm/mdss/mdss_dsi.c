@@ -43,6 +43,15 @@ static struct mdss_dsi_data *mdss_dsi_res;
 #define DSI_DISABLE_PC_LATENCY 100
 #define DSI_ENABLE_PC_LATENCY PM_QOS_DEFAULT_VALUE
 
+#if defined(CONFIG_TOUCHSCREEN_ILI2120) && defined(CONFIG_TOUCHSCREEN_FTS)
+extern int focaltech_gesture_enable;
+extern int ilitek_gesture_enable;
+#endif
+
+#ifdef CONFIG_JEICE_COMMON
+extern int tp_gesture_wakeup(void);
+#endif
+
 static struct pm_qos_request mdss_dsi_pm_qos_request;
 
 static void mdss_dsi_pm_qos_add_request(struct mdss_dsi_ctrl_pdata *ctrl_pdata)
@@ -294,10 +303,25 @@ static int mdss_dsi_panel_power_off(struct mdss_panel_data *pdata)
 
 	if (mdss_dsi_pinctrl_set_state(ctrl_pdata, false))
 		pr_debug("reset disable: pinctrl not enabled\n");
-
+#if defined(CONFIG_TOUCHSCREEN_ILI2120) && defined(CONFIG_TOUCHSCREEN_FTS)
+	if (focaltech_gesture_enable == 1 || ilitek_gesture_enable == 1) {
+		ret = msm_dss_enable_vreg(
+			ctrl_pdata->panel_power_data.vreg_config,
+			ctrl_pdata->panel_power_data.num_vreg, 1);
+	} 
+  else 
+#endif
+  {
+#ifdef CONFIG_JEICE_COMMON
+    if(tp_gesture_wakeup() == 1){
+         return 0;
+      }
+#endif
 	ret = msm_dss_enable_vreg(
 		ctrl_pdata->panel_power_data.vreg_config,
 		ctrl_pdata->panel_power_data.num_vreg, 0);
+	}
+
 	if (ret)
 		pr_err("%s: failed to disable vregs for %s\n",
 			__func__, __mdss_dsi_pm_name(DSI_PANEL_PM));
@@ -424,6 +448,9 @@ int mdss_dsi_panel_power_ctrl(struct mdss_panel_data *pdata,
 		pr_debug("%s: no change needed\n", __func__);
 		return 0;
 	}
+
+	if (power_state == 1)
+		gpio_direction_output(110, 1);
 
 	ctrl_pdata = container_of(pdata, struct mdss_dsi_ctrl_pdata,
 				panel_data);

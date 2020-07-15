@@ -35,6 +35,8 @@
 #include <linux/string_helpers.h>
 #include <linux/alarmtimer.h>
 #include <linux/qpnp/qpnp-revid.h>
+#include <linux/gpio.h>
+#include <linux/of_gpio.h>
 
 /* Register offsets */
 
@@ -565,6 +567,7 @@ struct fg_chip {
 	int			status;
 	int			prev_status;
 	int			health;
+	int                     battery_full_design;
 	enum fg_batt_aging_mode	batt_aging_mode;
 	struct alarm		hard_jeita_alarm;
 	/* capacity learning */
@@ -4643,7 +4646,7 @@ static int fg_power_get_property(struct power_supply *psy,
 			val->intval = 1;
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
-		val->intval = chip->nom_cap_uah;
+		val->intval = chip->battery_full_design;
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_FULL:
 		val->intval = chip->learning_data.learned_cc_uah;
@@ -6431,6 +6434,12 @@ wait:
 		goto no_profile;
 	}
 
+	rc = of_property_read_u32(profile_node, "qcom,battery-full-design", &chip->battery_full_design);
+	if (rc < 0) {
+		pr_err("No profile data available\n");
+		return -ENODATA;
+	}
+
 	rc = of_property_read_string(profile_node, "qcom,battery-type",
 					&batt_type_str);
 	if (rc) {
@@ -7068,7 +7077,7 @@ static int fg_of_init(struct fg_chip *chip)
 				* FULL_SOC_RAW, FULL_CAPACITY);
 	OF_READ_SETTING(FG_MEM_RESUME_SOC, "resume-soc-raw", rc, 1);
 	OF_READ_SETTING(FG_MEM_IRQ_VOLT_EMPTY, "irq-volt-empty-mv", rc, 1);
-	OF_READ_SETTING(FG_MEM_VBAT_EST_DIFF, "vbat-estimate-diff-mv", rc, 1);
+	OF_READ_SETTING(FG_MEM_VBAT_EST_DIFF, "fg-vbat-estimate-diff-mv", rc, 1);
 	OF_READ_SETTING(FG_MEM_DELTA_SOC, "fg-delta-soc", rc, 1);
 	OF_READ_SETTING(FG_MEM_BATT_LOW, "fg-vbatt-low-threshold", rc, 1);
 	OF_READ_SETTING(FG_MEM_THERM_DELAY, "fg-therm-delay-us", rc, 1);
@@ -7117,8 +7126,18 @@ static int fg_of_init(struct fg_chip *chip)
 			chip->spmi->dev.of_node,
 			"qcom,hold-soc-while-full");
 
-	sense_type = of_property_read_bool(chip->spmi->dev.of_node,
-					"qcom,ext-sense-type");
+#ifdef CONFIG_MSM8953_PRODUCT
+#define IS_BARDOCK_BEFORE_PVT() ((gpio_get_value(127) == 0))
+	if(!IS_BARDOCK_BEFORE_PVT())
+		sense_type = of_property_read_bool(chip->spmi->dev.of_node,
+						"qcom,ext-sense-type-mp");
+	else
+#endif
+
+		sense_type = of_property_read_bool(chip->spmi->dev.of_node,
+						"qcom,ext-sense-type");
+
+
 	if (rc == 0) {
 		if (fg_sense_type < 0)
 			fg_sense_type = sense_type;
@@ -8016,6 +8035,7 @@ static int fg_common_hw_init(struct fg_chip *chip)
 	int rc;
 	int resume_soc_raw;
 	u8 val;
+	u16 address_soc_delta;
 
 	update_iterm(chip);
 	update_cutoff_voltage(chip);
@@ -8043,7 +8063,13 @@ static int fg_common_hw_init(struct fg_chip *chip)
 		}
 	}
 
-	rc = fg_mem_masked_write(chip, settings[FG_MEM_DELTA_SOC].address, 0xFF,
+		address_soc_delta = settings[FG_MEM_DELTA_SOC].address;
+	if (settings[FG_MEM_DELTA_SOC].value < 3)
+		rc = fg_mem_masked_write(chip, address_soc_delta, 0xFF,
+			1,
+			settings[FG_MEM_DELTA_SOC].offset);
+	else
+		rc = fg_mem_masked_write(chip, address_soc_delta, 0xFF,
 			soc_to_setpoint(settings[FG_MEM_DELTA_SOC].value),
 			settings[FG_MEM_DELTA_SOC].offset);
 	if (rc) {

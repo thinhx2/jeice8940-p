@@ -1,0 +1,241 @@
+/*
+ * Copyright (c) 2015-2016, The Linux Foundation. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 and
+ * only version 2 as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+/dts-v1/;
+
+#include "msm8940.dtsi"
+#include "msm8940-pmi8950-mtp.dtsi"
+#include "jeice8940-common.dtsi"
+#include "dsi-panel-djn-ft8006u-720p-plus-video.dtsi"
+#include "dsi-panel-guoxian-ft8613-720p-plus-video.dtsi"
+
+/ {
+	model = "Qualcomm Technologies, Inc. MSM8940-PMI8950 MTP";
+	compatible = "qcom,msm8940-mtp", "qcom,msm8940", "qcom,mtp";
+	qcom,board-id= <8 0>;
+	qcom,pmic-id = <0x10019 0x020011 0x0 0x0>;
+
+	reserved-memory {
+		secure_mem: secure_region@0 {
+			status="disabled";
+		};
+	};
+};
+
+&mdss_dsi0 {
+	qcom,dsi-pref-prim-pan = <&dsi_djn_ft8006u_720p_plus_video>;
+};
+
+&soc {
+	/delete-node/ hbtp;
+};
+
+&i2c_3 {
+		status = "ok";
+			focaltech@38 {
+				compatible = "focaltech,fts";
+				reg = <0x38>;
+				interrupt-parent = <&tlmm>;
+				interrupts = <65 0x2008>;
+				vdd-supply = <&pm8937_l10>;
+				vcc_i2c-supply = <&pm8937_l5>;
+				/* pins used by touchscreen */
+				pinctrl-names = "pmx_ts_active","pmx_ts_suspend",
+					"pmx_ts_release";
+				pinctrl-0 = <&ts_int_active &ts_reset_active>;
+				pinctrl-1 = <&ts_int_suspend &ts_reset_suspend>;
+				pinctrl-2 = <&ts_release>;
+				focaltech,name = "fts_ts";
+				focaltech,family-id = <0x14>;
+				focaltech,reset-gpio = <&tlmm 64 0x00>;
+				focaltech,irq-gpio = <&tlmm 65 0x2002>;
+				focaltech,display-coords = <0 0 720 1440>;
+				focaltech,panel-coords = <0 0 720 1440>;
+				focaltech,button-map= <158 172 139>;
+				focaltech,no-force-update;
+				focaltech,i2c-pull-up;
+				focaltech,group-id = <1>;
+				focaltech,hard-reset-delay-ms = <20>;
+				focaltech,soft-reset-delay-ms = <200>;
+				focaltech,num-max-touches = <10>;
+				focaltech,fw-delay-aa-ms = <30>;
+				focaltech,fw-delay-55-ms = <30>;
+				focaltech,fw-upgrade-id1 = <0x11>;
+				focaltech,fw-upgrade-id2 = <0x11>;
+				focaltech,fw-delay-readid-ms = <10>;
+				focaltech,fw-delay-era-flsh-ms = <2000>;
+				focaltech,fw-auto-cal;
+				focaltech,fw-vkey-support;
+				focaltech,ignore-id-check;
+		};
+};
+
+&i2c_3_sleep {
+	mux {
+		function = "blsp_i2c3";
+	};
+};
+
+&soc {
+	i2c@78b6000 {
+		/delete-node/ wsa881x-i2c-codec@45;
+	};
+	
+	tlmm: pinctrl@1000000 {
+		pri-tlmm-lines {
+			pri_tlmm_lines_act: pri_tlmm_lines_act {
+				mux {
+					pins = "gpio85", "gpio88", "gpio86";
+					function = "pri_mi2s";
+				};
+
+				config {
+					pins = "gpio85", "gpio88", "gpio86";
+					drive-strength = <8>;
+				};
+			};
+
+			pri_tlmm_lines_sus: pri_tlmm_lines_sus {
+				mux {
+					pins = "gpio85", "gpio88", "gpio86";
+					function = "pri_mi2s";
+				};
+
+				config {
+					pins = "gpio85", "gpio88", "gpio86";
+					drive-strength = <2>;
+					bias-pull-down;
+				};
+			};
+		};
+	};
+};
+
+&int_codec {
+	status = "okay";
+	/delete-property/ qcom,cdc-us-euro-gpios;
+	compatible = "qcom,msm8952-audio-codec";
+	qcom,model = "msm8952-snd-card-mtp";
+	qcom,msm-hs-micbias-type = "external";
+	qcom,msm-mbhc-hphl-swh = <1>;
+	qcom,msm-mbhc-gnd-swh = <0>;
+
+	qcom,audio-routing =
+		"RX_BIAS", "MCLK",
+		"SPK_RX_BIAS", "MCLK",
+		"INT_LDO_H", "MCLK",
+		"MIC BIAS External", "Handset Mic",
+		"MIC BIAS External2", "Headset Mic",
+		"MIC BIAS External", "Secondary Mic",
+		"AMIC1", "MIC BIAS External",
+		"AMIC2", "MIC BIAS External2",
+		"AMIC3", "MIC BIAS External";
+
+	qcom,msm-ext-pa = "quinary","quaternary";
+	qcom,msm-mclk-freq = <9600000>;
+	qcom,msm-gpios =    "pri_i2s",
+			"quin_i2s";
+	qcom,pinctrl-names =
+		"all_off",
+		"pri_i2s_act",
+		"quin_act",
+		"quin_pri_i2s_act";
+	pinctrl-names =
+		"all_off",
+		"pri_i2s_act",
+		"quin_act",
+		"quin_pri_i2s_act";
+
+	qcom,hdmi-dba-codec-rx;
+
+		asoc-platform = <&pcm0>, <&pcm1>, <&pcm2>, <&voip>, <&voice>,
+		<&loopback>, <&compress>, <&hostless>,
+		<&afe>, <&lsm>, <&routing>, <&lpa>;
+	asoc-platform-names = "msm-pcm-dsp.0", "msm-pcm-dsp.1",
+		"msm-pcm-dsp.2", "msm-voip-dsp",
+		"msm-pcm-voice", "msm-pcm-loopback",
+		"msm-compress-dsp", "msm-pcm-hostless",
+		"msm-pcm-afe", "msm-lsm-client",
+		"msm-pcm-routing", "msm-pcm-lpa";
+	asoc-cpu = <&dai_pri_auxpcm>,
+	<&dai_mi2s0>, <&dai_mi2s1>,
+	<&dai_mi2s2>, <&dai_mi2s3>,
+	<&dai_mi2s5>, <&dai_mi2s6>,
+	<&sb_0_rx>, <&sb_0_tx>, <&sb_1_rx>, <&sb_1_tx>,
+	<&sb_3_rx>, <&sb_3_tx>, <&sb_4_rx>, <&sb_4_tx>,
+	<&bt_sco_rx>, <&bt_sco_tx>,
+	<&int_fm_rx>, <&int_fm_tx>,
+	<&afe_pcm_rx>, <&afe_pcm_tx>,
+	<&afe_proxy_rx>, <&afe_proxy_tx>,
+	<&incall_record_rx>, <&incall_record_tx>,
+	<&incall_music_rx>, <&incall_music_2_rx>;
+	asoc-cpu-names = "msm-dai-q6-auxpcm.1",
+		"msm-dai-q6-mi2s.0", "msm-dai-q6-mi2s.1",
+		"msm-dai-q6-mi2s.2", "msm-dai-q6-mi2s.3",
+		"msm-dai-q6-mi2s.5", "msm-dai-q6-mi2s.6",
+		"msm-dai-q6-dev.16384", "msm-dai-q6-dev.16385",
+		"msm-dai-q6-dev.16386", "msm-dai-q6-dev.16387",
+		"msm-dai-q6-dev.16390", "msm-dai-q6-dev.16391",
+		"msm-dai-q6-dev.16392", "msm-dai-q6-dev.16393",
+		"msm-dai-q6-dev.12288", "msm-dai-q6-dev.12289",
+		"msm-dai-q6-dev.12292", "msm-dai-q6-dev.12293",
+		"msm-dai-q6-dev.224", "msm-dai-q6-dev.225",
+		"msm-dai-q6-dev.241", "msm-dai-q6-dev.240",
+		"msm-dai-q6-dev.32771", "msm-dai-q6-dev.32772",
+		"msm-dai-q6-dev.32773", "msm-dai-q6-dev.32770";
+};
+
+&i2c_2 {
+  awinic@45 {
+		compatible = "awinic,aw2013";
+		reg = <0x45>;
+		vdd-supply = <&pm8937_l10>;
+		vcc-supply = <&pm8937_l6>;
+		awinic,ledr-parameter_array = <1 1 1 1 3 0 0>;
+		awinic,ledg-parameter_array = <1 2 1 2 3 0 0>;
+		awinic,ledb-parameter_array = <1 2 1 2 3 0 0>;
+	};
+
+	tfa98xx@34 {
+		compatible = "nxp,tfa98xx";
+		reg = <0x34>;
+		reset-gpio = <&tlmm 96 0>;
+		irq-gpio = <&tlmm 97 0x2008>;
+		status = "okay";
+		};
+};
+
+&pmi_haptic {
+	/delete-property/ qcom,en-brake;
+	/delete-property/ qcom,brake-pattern;
+	/delete-property/ qcom,wave-samples;
+	/delete-property/ qcom,wave-rep-cnt;
+	/delete-property/ qcom,wave-samp-rep-cnt;
+	/delete-property/ qcom,lra-auto-res-mode;
+	/delete-property/ qcom,lra-high-z;
+	/delete-property/ qcom,lra-res-cal-period;
+	/delete-property/ qcom,correct-lra-drive-freq;
+	/delete-property/ qcom,misc-trim-error-rc19p2-clk-reg-present;
+			status = "okay";
+			qcom,play-mode = "buffer";
+			qcom,wave-play-rate-us = <6667>;
+			qcom,actuator-type = "erm";
+			qcom,wave-shape = "square";
+			qcom,vmax-mv = <3300>;
+			qcom,ilim-ma = <100>;
+			qcom,sc-deb-cycles = <8>;
+			qcom,int-pwm-freq-khz = <505>;
+			qcom,use-play-irq;
+			qcom,use-sc-irq;
+};
+

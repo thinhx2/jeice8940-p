@@ -1,4 +1,4 @@
-/* Copyright (c) 2015-2017, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2015-2018, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -307,7 +307,6 @@
 
 			qcom,timing-db-mode;
 			qcom,mdss-mdp = <&mdss_mdp>;
-			vdd-supply = <&pm8937_l17>;
 			vddio-supply = <&pm8937_l6>;
 
 			clocks = <&clock_gcc_mdss clk_gcc_mdss_byte0_clk>,
@@ -341,7 +340,6 @@
 			      "dsi_phy_regulator", "mmss_misc_phys";
 
 			qcom,mdss-mdp = <&mdss_mdp>;
-			vdd-supply = <&pm8937_l17>;
 			vddio-supply = <&pm8937_l6>;
 
 			clocks = <&clock_gcc_mdss clk_gcc_mdss_byte1_clk>,

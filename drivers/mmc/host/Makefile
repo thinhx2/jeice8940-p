@@ -77,3 +77,6 @@ obj-$(CONFIG_MMC_CQ_HCI)		+= cmdq_hci.o
 ifeq ($(CONFIG_CB710_DEBUG),y)
 	CFLAGS-cb710-mmc	+= -DDEBUG
 endif
+ifeq ($(strip $(CUST_COMPILE_TYPE)),factory)
+ccflags-y += -DCARD_SLOT_NODE_IN_FACTORY
+endif

@@ -1,0 +1,53 @@
+
+qcom,vk-M1000-3000mah {
+	/* #3465313_Longcheer_M1000vk_3000mAh_averaged_MasterSlave_May29th2018*/
+	qcom,max-voltage-uv = <4400000>;
+	qcom,nom-batt-capacity-mah = <3000>;
+	qcom,batt-id-kohm = <100>;
+	qcom,battery-full-design = <3000>;
+	qcom,chg-term-ua = <150000>;
+	qcom,fastchg-current-ma = <2200>;
+	qcom,battery-beta = <3435>;
+	qcom,battery-type = "vk-M1000-3000mah";
+	qcom,chg-rslow-comp-c1 = <4028222>;
+	qcom,chg-rslow-comp-c2 = <6864475>;
+	qcom,chg-rs-to-rslow = <1113025>;
+	qcom,chg-rslow-comp-thr = <0xB5>;
+	qcom,fg-cc-cv-threshold-mv = <4390>;
+	qcom,checksum = <0x1164>;
+	qcom,gui-version = "PMI8950GUI - 2.0.0.16";
+	qcom,fg-profile-data = [
+		 13 88 D4 7E 
+		 2E 82 4E 7C 
+		 3E 83 53 72 
+		 0B 7E FF 7A 
+		 F4 81 F2 9B 
+		 C5 BF 2B D1 
+		 8A 10 07 88 
+		 F8 7D C8 81 
+		 27 7C 32 83 
+		 F0 79 01 8C 
+		 4A 88 22 82 
+		 EE 9B 82 C4 
+		 16 D3 6E 0D 
+		 E4 0B 9D 5A 
+		 14 70 B2 FD 
+		 45 36 45 44 
+		 3F 31 00 00 
+		 9D 4C 7D 40 
+		 56 3A 00 00 
+		 00 00 00 00 
+		 00 00 00 00 
+		 03 71 43 6B 
+		 DF 7C D8 88 
+		 AE 7C 2B 72 
+		 68 74 83 73 
+		 9E 75 6C 6A 
+		 91 57 1A 9A 
+		 34 74 60 B6 
+		 5E A0 71 0C 
+		 28 00 FF 36 
+		 F0 11 30 03 
+		 00 00 00 0C 
+	];
+};

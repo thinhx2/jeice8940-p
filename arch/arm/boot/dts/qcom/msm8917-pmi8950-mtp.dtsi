@@ -16,12 +16,12 @@
 #include "msm8917-audio-mtp.dtsi"
 
 &soc {
-	led_flash0: qcom,camera-flash {
+	led_flash0: qcom,camera-flash@0 {
 		cell-index = <0>;
 		compatible = "qcom,camera-flash";
 		qcom,flash-type = <1>;
-		qcom,flash-source = <&pmi8950_flash0 &pmi8950_flash1>;
-		qcom,torch-source = <&pmi8950_torch0 &pmi8950_torch1>;
+		qcom,flash-source = <&pmi8950_flash0>;
+		qcom,torch-source = <&pmi8950_torch0>;
 		qcom,switch-source = <&pmi8950_switch>;
 	};
 
@@ -33,9 +33,7 @@
 
 /{
 	mtp_batterydata: qcom,battery-data {
-		qcom,batt-id-range-pct = <15>;
-		#include "batterydata-itech-3000mah.dtsi"
-		#include "batterydata-ascent-3450mAh.dtsi"
+		qcom,batt-id-range-pct = <30>;
 	};
 };
 
